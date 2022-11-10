@@ -1,0 +1,20 @@
+
+menu "JerryScript"
+
+	config JERRYSCRIPT
+		bool "Use JerryScript"
+		default n
+	
+	if JERRYSCRIPT
+
+		config JERRY_PORT
+			bool "Enable Jerry Port"
+			default y
+
+		config JERRY_MATH
+			bool "Enable Jerry Math"
+			default n
+
+	endif
+
+endmenu
