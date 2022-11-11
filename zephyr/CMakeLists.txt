@@ -6,25 +6,203 @@ include_directories(${ZEPHYR_BASE}/lib/jerryscript)
 
 zephyr_interface_library_named(JERRYSCRIPT)
 
-set(JERRY_CMDLINE_TEST          OFF     CACHE   BOOL    "Build jerry test command line tool?")
-set(JERRY_CMDLINE               OFF     CACHE   BOOL    "Build jerry command line tool?")
-set(JERRY_CMDLINE_SNAPSHOT      OFF     CACHE   BOOL    "Build jerry snapshot command line tool?")
-set(JERRY_LIBFUZZER             OFF     CACHE   BOOL    "Build jerry with libfuzzer support?")
-set(JERRY_PORT                  ON      CACHE   BOOL    "Build default jerry port implementation?")
-set(JERRY_EXT                   ON      CACHE   BOOL    "Build jerry-ext?")
-set(JERRY_MATH                  ON      CACHE   BOOL    "Build and use jerry-math?")
-set(JERRY_PARSER                ON      CACHE   BOOL    "Use parser?")
-set(JERRY_GLOBAL_HEAP_SIZE      "(70)"  CACHE   STRING  "Size of memory heap, in kilobytes")
-set(JERRY_SNAPSHOT_EXEC         ON      CACHE   BOOL    "Execute Jerry Snapshot?")
-set(UNITTESTS                   OFF     CACHE   BOOL    "Build unit tests?")
-set(DOCTESTS                    OFF     CACHE   BOOL    "Build doc tests?")
-set(BUILD_SHARED_LIBS           OFF     CACHE   BOOL    "Build shared libraries?")
-set(ENABLE_AMALGAM              OFF     CACHE   BOOL    "Enable amalgamated build?")
-set(ENABLE_LTO                  OFF     CACHE   BOOL    "Enable LTO build?")
-set(ENABLE_STRIP                ON      CACHE   BOOL    "Enable stripping all symbols from release binary?")
-set(ENABLE_COMPILE_COMMANDS     ON      CACHE   BOOL    "Enable generating compile_commands.json?")
-
 zephyr_library()
+
+if(CONFIG_JERRY_CMDLINE_TEST)
+    set(JERRY_CMDLINE_TEST ON)
+else()
+    set(JERRY_CMDLINE_TEST OFF)
+endif()
+
+if(CONFIG_JERRY_CMDLINE)
+    set(JERRY_CMDLINE ON)
+else()
+    set(JERRY_CMDLINE OFF)
+endif()
+
+if(CONFIG_JERRY_CMDLINE_SNAPSHOT)
+    set(JERRY_CMDLINE_SNAPSHOT ON)
+else()
+    set(JERRY_CMDLINE_SNAPSHOT OFF)
+endif()
+
+if(CONFIG_JERRY_LIBFUZZER)
+    set(JERRY_LIBFUZZER ON)
+else()
+    set(JERRY_LIBFUZZER OFF)
+endif()
+
+if(CONFIG_JERRY_PORT)
+    set(JERRY_PORT ON)
+else()
+    set(JERRY_PORT OFF)
+endif()
+
+if(CONFIG_JERRY_EXT)
+    set(JERRY_EXT ON)
+else()
+    set(JERRY_EXT OFF)
+endif()
+
+if(CONFIG_JERRY_MATH)
+    set(JERRY_MATH ON)
+else()
+    set(JERRY_MATH OFF)
+endif()
+
+if(CONFIG_JERRY_PARSER)
+    set(JERRY_PARSER ON)
+else()
+    set(JERRY_PARSER OFF)
+endif()
+
+if(CONFIG_JERRY_SNAPSHOT_EXEC)
+    set(JERRY_SNAPSHOT_EXEC ON)
+else()
+    set(JERRY_SNAPSHOT_EXEC OFF)
+endif()
+
+if(CONFIG_UNITTESTS)
+    set(UNITTESTS ON)
+else()
+    set(UNITTESTS OFF)
+endif()
+
+if(CONFIG_DOCTESTS)
+    set(DOCTESTS ON)
+else()
+    set(DOCTESTS OFF)
+endif()
+
+if(CONFIG_BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS ON)
+else()
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
+if(CONFIG_ENABLE_AMALGAM)
+    set(ENABLE_AMALGAM ON)
+else()
+    set(ENABLE_AMALGAM OFF)
+endif()
+
+if(CONFIG_ENABLE_LTO)
+    set(ENABLE_LTO ON)
+else()
+    set(ENABLE_LTO OFF)
+endif()
+
+if(CONFIG_ENABLE_STRIP)
+    set(ENABLE_STRIP ON)
+else()
+    set(ENABLE_STRIP OFF)
+endif()
+
+if(CONFIG_ENABLE_COMPILE_COMMANDS)
+    set(ENABLE_COMPILE_COMMANDS ON)
+else()
+    set(ENABLE_COMPILE_COMMANDS OFF)
+endif()
+
+set(JERRY_GLOBAL_HEAP_SIZE      ${CONFIG_JERRY_GLOBAL_HEAP_SIZE}) 
+set(JERRY_GC_LIMIT              ${CONFIG_JERRY_GC_LIMIT})         
+set(JERRY_STACK_LIMIT           ${CONFIG_JERRY_STACK_LIMIT})      
+set(JERRY_GC_MARK_LIMIT         ${CONFIG_JERRY_GC_MARK_LIMIT})    
+
+# Jerry options
+# build mode specific compile/link flags
+set(DEFINES_JERRY ${DEFINES_JERRY} $<$<NOT:$<CONFIG:Debug>>:JERRY_NDEBUG>)
+
+# Jerry heap-section
+if(DEFINED JERRY_ATTR_GLOBAL_HEAP)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ATTR_GLOBAL_HEAP=${JERRY_ATTR_GLOBAL_HEAP})
+endif()
+
+# Memory usage limit for triggering garbage collection
+if(JERRY_GC_LIMIT)
+  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GC_LIMIT=${JERRY_GC_LIMIT})
+endif()
+
+# Helper macro to set 0/1 switch as Jerry Defines
+macro(jerry_add_define01 NAME)
+  if(${NAME})
+    set(DEFINES_JERRY ${DEFINES_JERRY} ${NAME}=1)
+  else()
+    set(DEFINES_JERRY ${DEFINES_JERRY} ${NAME}=0)
+  endif()
+endmacro(jerry_add_define01)
+
+# Checks the optional features
+# Enable 32 bit cpointers
+jerry_add_define01(JERRY_CPOINTER_32_BIT)
+
+# Fill error messages for builtin error objects
+jerry_add_define01(JERRY_ERROR_MESSAGES)
+
+# Use external context instead of static one
+jerry_add_define01(JERRY_EXTERNAL_CONTEXT)
+
+# JS-Parser
+jerry_add_define01(JERRY_PARSER)
+
+# JS function toString
+jerry_add_define01(JERRY_FUNCTION_TO_STRING)
+
+# JS line info
+jerry_add_define01(JERRY_LINE_INFO)
+
+# Logging
+jerry_add_define01(JERRY_LOGGING)
+
+# Memory statistics
+jerry_add_define01(JERRY_MEM_STATS)
+
+# Enable debugger
+jerry_add_define01(JERRY_DEBUGGER)
+
+# Memory management stress-test mode
+jerry_add_define01(JERRY_MEM_GC_BEFORE_EACH_ALLOC)
+
+# Parser byte-code dumps
+jerry_add_define01(JERRY_PARSER_DUMP_BYTE_CODE)
+
+# Promise callback
+jerry_add_define01(JERRY_PROMISE_CALLBACK)
+
+# RegExp strict mode
+jerry_add_define01(JERRY_REGEXP_STRICT_MODE)
+
+# RegExp byte-code dumps
+jerry_add_define01(JERRY_REGEXP_DUMP_BYTE_CODE)
+
+# Snapshot exec
+jerry_add_define01(JERRY_SNAPSHOT_EXEC)
+
+# Snapshot save
+jerry_add_define01(JERRY_SNAPSHOT_SAVE)
+
+# Enable system allocator
+jerry_add_define01(JERRY_SYSTEM_ALLOCATOR)
+
+# Enable VM execution stop callback
+jerry_add_define01(JERRY_VM_HALT)
+
+# Enable VM throw callback
+jerry_add_define01(JERRY_VM_THROW)
+
+# Size of heap
+set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GLOBAL_HEAP_SIZE=${JERRY_GLOBAL_HEAP_SIZE})
+
+# Maximum size of stack memory usage
+set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_STACK_LIMIT=${JERRY_STACK_LIMIT})
+
+# Maximum depth of recursion during GC mark phase
+set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GC_MARK_LIMIT=${JERRY_GC_MARK_LIMIT})
+
+# Add the compile definitions to target
+# set(JERRY_CORE_NAME jerry-core)
+target_compile_definitions(JERRYSCRIPT INTERFACE ${DEFINES_JERRY})
+
 
 # Jerry Core
 zephyr_include_directories(
