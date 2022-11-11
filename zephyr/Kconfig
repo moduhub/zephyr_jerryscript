@@ -1,20 +1,88 @@
 
-menu "JerryScript"
+config JERRYSCRIPT
+	bool "Use JerryScript"
+	default n
 
-	config JERRYSCRIPT
-		bool "Use JerryScript"
+if JERRYSCRIPT
+
+	config JERRY_CMDLINE_TEST
+		bool "JERRY_CMDLINE_TEST - Build jerry test command line tool?"
 		default n
-	
-	if JERRYSCRIPT
 
-		config JERRY_PORT
-			bool "Enable Jerry Port"
-			default y
+	config JERRY_CMDLINE
+		bool "JERRY_CMDLINE - Build jerry command line tool?"
+		default n
 
-		config JERRY_MATH
-			bool "Enable Jerry Math"
-			default n
+	config JERRY_CMDLINE_SNAPSHOT
+		bool "JERRY_CMDLINE_SNAPSHOT - Build jerry snapshot command line tool?"
+		default n
 
-	endif
+	config JERRY_LIBFUZZER
+		bool "JERRY_LIBFUZZER - Build jerry with libfuzzer support?"
+		default n
 
-endmenu
+	config JERRY_PORT
+		bool "JERRY_PORT - Build default jerry port implementation?"
+		default y
+
+	config JERRY_EXT
+		bool "JERRY_EXT - Build jerry-ext?"
+		default y
+
+	config JERRY_MATH
+		bool "JERRY_MATH - Build and use jerry-math?"
+		default n
+
+	config JERRY_PARSER
+		bool "JERRY_PARSER - Use parser?"
+		default y
+
+	config JERRY_GLOBAL_HEAP_SIZE
+		string "JERRY_GLOBAL_HEAP_SIZE - Size of memory heap, in kilobytes"
+		default "(70)"
+
+	config JERRY_SNAPSHOT_EXEC
+		bool "JERRY_SNAPSHOT_EXEC - Execute Jerry Snapshot?"
+		default n
+
+	config UNITTESTS
+		bool "UNITTESTS - Build unit tests?"
+		default n
+
+	config DOCTESTS
+		bool "DOCTESTS - Build doc tests?"
+		default n
+
+	config BUILD_SHARED_LIBS
+		bool "BUILD_SHARED_LIBS - Build shared libraries?"
+		default n
+
+	config ENABLE_AMALGAM
+		bool "ENABLE_AMALGAM - Enable amalgamated build?"
+		default n
+
+	config ENABLE_LTO
+		bool "ENABLE_LTO - Enable LTO build?"
+		default n
+
+	config ENABLE_STRIP
+		bool "ENABLE_STRIP - Enable stripping all symbols from release binary?"
+		default y
+
+	config ENABLE_COMPILE_COMMAND
+		bool "ENABLE_COMPILE_COMMAND - Enable generating compile_commands.json?"
+		default y
+
+	config JERRY_GC_LIMIT
+		string "JERRY_GC_LIMIT - Heap usage limit to trigger garbage collection"
+		default "(0)"
+
+	config JERRY_STACK_LIMIT
+		string "JERRY_STACK_LIMIT - Maximum stack usage size, in kilobytes"
+		default "(0)"
+
+	config JERRY_GC_MARK_LIMIT
+		string "JERRY_GC_MARK_LIMIT - Maximum depth of recursion during GC mark phase"
+		default "(8)"
+
+endif
