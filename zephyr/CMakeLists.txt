@@ -8,204 +8,123 @@ zephyr_interface_library_named(JERRYSCRIPT)
 
 zephyr_library()
 
-if(CONFIG_JERRY_CMDLINE_TEST)
-    set(JERRY_CMDLINE_TEST ON)
-else()
-    set(JERRY_CMDLINE_TEST OFF)
-endif()
+# These values must be used to build with zephyr
+set(JERRY_CMDLINE_TEST OFF)
+set(JERRY_CMDLINE OFF)
 
-if(CONFIG_JERRY_CMDLINE)
-    set(JERRY_CMDLINE ON)
-else()
-    set(JERRY_CMDLINE OFF)
-endif()
+#KConfig helper macros
+macro(jerry_add_bool_from_kconfig JERRY_NAME)
+    if(${ARGC} EQUAL 2)
+        message(STATUS "jerry_add_bool_from_kconfig ${JERRY_NAME}=${ARGV1}")
+        if(${ARGV1})
+            set(DEFINES_JERRY ${DEFINES_JERRY} ${JERRY_NAME}=1)
+        else()
+            set(DEFINES_JERRY ${DEFINES_JERRY} ${JERRY_NAME}=0)
+        endif()
+    else()
+        message(STATUS "KCONFIG option for ${JERRY_NAME} undefined")
+    endif()
+endmacro(jerry_add_bool_from_kconfig)
 
-if(CONFIG_JERRY_CMDLINE_SNAPSHOT)
-    set(JERRY_CMDLINE_SNAPSHOT ON)
-else()
-    set(JERRY_CMDLINE_SNAPSHOT OFF)
-endif()
-
-if(CONFIG_JERRY_LIBFUZZER)
-    set(JERRY_LIBFUZZER ON)
-else()
-    set(JERRY_LIBFUZZER OFF)
-endif()
-
-if(CONFIG_JERRY_PORT)
-    set(JERRY_PORT ON)
-else()
-    set(JERRY_PORT OFF)
-endif()
-
-if(CONFIG_JERRY_EXT)
-    set(JERRY_EXT ON)
-else()
-    set(JERRY_EXT OFF)
-endif()
-
-if(CONFIG_JERRY_MATH)
-    set(JERRY_MATH ON)
-else()
-    set(JERRY_MATH OFF)
-endif()
-
-if(CONFIG_JERRY_PARSER)
-    set(JERRY_PARSER ON)
-else()
-    set(JERRY_PARSER OFF)
-endif()
-
-if(CONFIG_JERRY_SNAPSHOT_EXEC)
-    set(JERRY_SNAPSHOT_EXEC ON)
-else()
-    set(JERRY_SNAPSHOT_EXEC OFF)
-endif()
-
-if(CONFIG_UNITTESTS)
-    set(UNITTESTS ON)
-else()
-    set(UNITTESTS OFF)
-endif()
-
-if(CONFIG_DOCTESTS)
-    set(DOCTESTS ON)
-else()
-    set(DOCTESTS OFF)
-endif()
-
-if(CONFIG_BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS ON)
-else()
-    set(BUILD_SHARED_LIBS OFF)
-endif()
-
-if(CONFIG_ENABLE_AMALGAM)
-    set(ENABLE_AMALGAM ON)
-else()
-    set(ENABLE_AMALGAM OFF)
-endif()
-
-if(CONFIG_ENABLE_LTO)
-    set(ENABLE_LTO ON)
-else()
-    set(ENABLE_LTO OFF)
-endif()
-
-if(CONFIG_ENABLE_STRIP)
-    set(ENABLE_STRIP ON)
-else()
-    set(ENABLE_STRIP OFF)
-endif()
-
-if(CONFIG_ENABLE_COMPILE_COMMANDS)
-    set(ENABLE_COMPILE_COMMANDS ON)
-else()
-    set(ENABLE_COMPILE_COMMANDS OFF)
-endif()
-
-set(JERRY_GLOBAL_HEAP_SIZE      ${CONFIG_JERRY_GLOBAL_HEAP_SIZE}) 
-set(JERRY_GC_LIMIT              ${CONFIG_JERRY_GC_LIMIT})         
-set(JERRY_STACK_LIMIT           ${CONFIG_JERRY_STACK_LIMIT})      
-set(JERRY_GC_MARK_LIMIT         ${CONFIG_JERRY_GC_MARK_LIMIT})    
-
-# Jerry options
-# build mode specific compile/link flags
-set(DEFINES_JERRY ${DEFINES_JERRY} $<$<NOT:$<CONFIG:Debug>>:JERRY_NDEBUG>)
-
-# Jerry heap-section
-if(DEFINED JERRY_ATTR_GLOBAL_HEAP)
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_ATTR_GLOBAL_HEAP=${JERRY_ATTR_GLOBAL_HEAP})
-endif()
-
-# Memory usage limit for triggering garbage collection
-if(JERRY_GC_LIMIT)
-  set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GC_LIMIT=${JERRY_GC_LIMIT})
-endif()
+macro(jerry_add_string_from_kconfig JERRY_NAME KCONFIG_VALUE)
+    set(DEFINES_JERRY ${DEFINES_JERRY} ${JERRY_NAME}=${KCONFIG_VALUE})
+endmacro(jerry_add_string_from_kconfig)
 
 # Helper macro to set 0/1 switch as Jerry Defines
-macro(jerry_add_define01 NAME)
-  if(${NAME})
+macro(jerry_define NAME VALUE)
+  if(${VALUE})
     set(DEFINES_JERRY ${DEFINES_JERRY} ${NAME}=1)
   else()
     set(DEFINES_JERRY ${DEFINES_JERRY} ${NAME}=0)
   endif()
-endmacro(jerry_add_define01)
+endmacro(jerry_define)
 
-# Checks the optional features
-# Enable 32 bit cpointers
-jerry_add_define01(JERRY_CPOINTER_32_BIT)
+#Routines to import configs from Profile folder
+# if (CONFIG_JERRY_PROFILE_MINIMAL)
+# set(JERRY_PROFILE "${CMAKE_CURRENT_SOURCE_DIR}/../jerry-core/profiles/minimal.profile")
+# endif()
 
-# Fill error messages for builtin error objects
-jerry_add_define01(JERRY_ERROR_MESSAGES)
+# if (CONFIG_JERRY_PROFILE_ESNEXT)
+# set(JERRY_PROFILE "${CMAKE_CURRENT_SOURCE_DIR}/../jerry-core/profiles/es.next.profile")
+# endif()
 
-# Use external context instead of static one
-jerry_add_define01(JERRY_EXTERNAL_CONTEXT)
+# if(EXISTS ${JERRY_PROFILE})
+# message("Using Jerry Profile: ${JERRY_PROFILE}")
+# file(READ "${JERRY_PROFILE}" PROFILE_SETTINGS)
+# string(REGEX REPLACE "[ \t]*#[^\n]*" "" PROFILE_SETTINGS "${PROFILE_SETTINGS}")
+# string(REGEX REPLACE "[\r\n]" ";" PROFILE_SETTINGS "${PROFILE_SETTINGS}")
 
-# JS-Parser
-jerry_add_define01(JERRY_PARSER)
+# # Process entries and save them as CMake variables.
+# # This is required to correctly generate the jerryscript-config.h file.
+# foreach(PROFILE_ENTRY ${PROFILE_SETTINGS})
+# string(REPLACE "=" ";" PROFILE_ENTRY "${PROFILE_ENTRY}")
+# list(GET PROFILE_ENTRY 0 PROFILE_KEY)
+# list(GET PROFILE_ENTRY 1 PROFILE_VALUE)
+# set(${PROFILE_KEY} ${PROFILE_VALUE})
+# endforeach()
 
-# JS function toString
-jerry_add_define01(JERRY_FUNCTION_TO_STRING)
+# set(DEFINES_JERRY ${DEFINES_JERRY} ${PROFILE_SETTINGS})
 
-# JS line info
-jerry_add_define01(JERRY_LINE_INFO)
+# message("Profile options added: ${PROFILE_SETTINGS}")
+# else()
+# message(FATAL_ERROR "Profile file: '${JERRY_PROFILE}' doesn't exist!")
+# endif()
 
-# Logging
-jerry_add_define01(JERRY_LOGGING)
+#Memory management
+jerry_add_string_from_kconfig(JERRY_GLOBAL_HEAP_SIZE    ${CONFIG_JERRY_GLOBAL_HEAP_SIZE})
+jerry_add_string_from_kconfig(JERRY_GC_LIMIT            ${CONFIG_JERRY_GC_LIMIT})
+jerry_add_string_from_kconfig(JERRY_STACK_LIMIT         ${CONFIG_JERRY_STACK_LIMIT})
+jerry_add_string_from_kconfig(JERRY_GC_MARK_LIMIT       ${CONFIG_JERRY_GC_MARK_LIMIT})
 
-# Memory statistics
-jerry_add_define01(JERRY_MEM_STATS)
+# Jerry options
+# build mode specific compile/link flags
+#set(DEFINES_JERRY ${DEFINES_JERRY} $<$<NOT:$<CONFIG:Debug>>:JERRY_NDEBUG>)
 
-# Enable debugger
-jerry_add_define01(JERRY_DEBUGGER)
+# FIXED DEFINES enforced by Zephyr requirements
+jerry_define(JERRY_ERROR_MESSAGES               y)
+jerry_define(JERRY_EXTERNAL_CONTEXT             n)
+jerry_define(JERRY_FUNCTION_TO_STRING           n)
+jerry_define(JERRY_LINE_INFO                    n)
+jerry_define(JERRY_LOGGING                      y)
+jerry_define(JERRY_MEM_STATS                    n)
+jerry_define(JERRY_DEBUGGER                     n)
+jerry_define(JERRY_MEM_GC_BEFORE_EACH_ALLOC     n)
+jerry_define(JERRY_PARSER_DUMP_BYTE_CODE        n)
+jerry_define(JERRY_PROMISE_CALLBACK             n)
+jerry_define(JERRY_REGEXP_STRICT_MODE           n)
+jerry_define(JERRY_REGEXP_DUMP_BYTE_CODE        n)
+jerry_define(JERRY_SYSTEM_ALLOCATOR             n)
+jerry_define(JERRY_VM_HALT                      n)
+jerry_define(JERRY_VM_THROW                     n)
 
-# Memory management stress-test mode
-jerry_add_define01(JERRY_MEM_GC_BEFORE_EACH_ALLOC)
+#User KCONFIG'ed defines
+jerry_add_bool_from_kconfig(JERRY_PARSER            ${CONFIG_JERRY_PARSER})
+jerry_add_bool_from_kconfig(JERRY_SNAPSHOT_EXEC     ${CONFIG_JERRY_SNAPSHOT_EXEC})
+jerry_add_bool_from_kconfig(JERRY_SNAPSHOT_SAVE     ${CONFIG_JERRY_SNAPSHOT_SAVE})
+jerry_add_bool_from_kconfig(JERRY_CPOINTER_32_BIT   ${CONFIG_JERRY_CPOINTER_32_BIT})
 
-# Parser byte-code dumps
-jerry_add_define01(JERRY_PARSER_DUMP_BYTE_CODE)
+#Builtins
+if(CONFIG_JERRY_BUILTINS)
+jerry_define(JERRY_BUILTINS               y)
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_ANNEXB    ${CONFIG_JERRY_BUILTIN_ANNEXB})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_ARRAY     ${CONFIG_JERRY_BUILTIN_ARRAY})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_BOOLEAN   ${CONFIG_JERRY_BUILTIN_BOOLEAN})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_DATE      ${CONFIG_JERRY_BUILTIN_DATE})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_ERRORS    ${CONFIG_JERRY_BUILTIN_ERRORS})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_JSON      ${CONFIG_JERRY_BUILTIN_JSON})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_MATH      ${CONFIG_JERRY_BUILTIN_MATH})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_NUMBER    ${CONFIG_JERRY_BUILTIN_NUMBER})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_REGEXP    ${CONFIG_JERRY_BUILTIN_REGEXP})
+jerry_add_bool_from_kconfig(JERRY_BUILTIN_STRING    ${CONFIG_JERRY_BUILTIN_STRING})
+else()
+jerry_define(JERRY_BUILTINS               n)
+message("All JerryScript builtins disabled (minimal profile)")
+endif()
 
-# Promise callback
-jerry_add_define01(JERRY_PROMISE_CALLBACK)
+set(JERRY_CORE_INTERFACE_INCLUDES
+    ../jerry-core/include)
 
-# RegExp strict mode
-jerry_add_define01(JERRY_REGEXP_STRICT_MODE)
-
-# RegExp byte-code dumps
-jerry_add_define01(JERRY_REGEXP_DUMP_BYTE_CODE)
-
-# Snapshot exec
-jerry_add_define01(JERRY_SNAPSHOT_EXEC)
-
-# Snapshot save
-jerry_add_define01(JERRY_SNAPSHOT_SAVE)
-
-# Enable system allocator
-jerry_add_define01(JERRY_SYSTEM_ALLOCATOR)
-
-# Enable VM execution stop callback
-jerry_add_define01(JERRY_VM_HALT)
-
-# Enable VM throw callback
-jerry_add_define01(JERRY_VM_THROW)
-
-# Size of heap
-set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GLOBAL_HEAP_SIZE=${JERRY_GLOBAL_HEAP_SIZE})
-
-# Maximum size of stack memory usage
-set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_STACK_LIMIT=${JERRY_STACK_LIMIT})
-
-# Maximum depth of recursion during GC mark phase
-set(DEFINES_JERRY ${DEFINES_JERRY} JERRY_GC_MARK_LIMIT=${JERRY_GC_MARK_LIMIT})
-
-# Add the compile definitions to target
-# set(JERRY_CORE_NAME jerry-core)
-target_compile_definitions(JERRYSCRIPT INTERFACE ${DEFINES_JERRY})
-
-
-# Jerry Core
-zephyr_include_directories(
+set(JERRY_CORE_PRIVATE_INCLUDES
     ../jerry-core/
     ../jerry-core/api
     ../jerry-core/debugger
@@ -213,7 +132,6 @@ zephyr_include_directories(
     ../jerry-core/ecma/builtin-objects
     ../jerry-core/ecma/builtin-objects/typedarray
     ../jerry-core/ecma/operations
-    ../jerry-core/include
     ../jerry-core/jcontext
     ../jerry-core/jmem
     ../jerry-core/jrt
@@ -221,10 +139,9 @@ zephyr_include_directories(
     ../jerry-core/parser/js
     ../jerry-core/parser/regexp
     ../jerry-core/profiles
-    ../jerry-core/vm
-)
+    ../jerry-core/vm)
 
-zephyr_library_sources(
+set (JERRY_CORE_SOURCES
     ../jerry-core/api/jerry-debugger-transport.c
     ../jerry-core/api/jerry-debugger.c
     ../jerry-core/api/jerry-module.c
@@ -316,8 +233,7 @@ zephyr_library_sources(
     ../jerry-core/vm/vm.c
 )
 
-# ECMA Builtin
-zephyr_library_sources(
+set(JERRY_ECMA_BUILTINS_SOURCES
     ../jerry-core/ecma/builtin-objects/ecma-builtin-aggregateerror.c
     ../jerry-core/ecma/builtin-objects/ecma-builtin-aggregateerror-prototype.c
     ../jerry-core/ecma/builtin-objects/ecma-builtin-array-iterator-prototype.c
@@ -431,35 +347,22 @@ zephyr_library_sources(
     ../jerry-core/ecma/builtin-objects/typedarray/ecma-builtin-uint8clampedarray.c
 )
 
-# Jerry Port
-if(NOT CONFIG_JERRY_PORT)
-    message(STATUS "Jerry Port Disabled")
-    else()
-    message(STATUS "Jerry Port Enabled")
-endif()
-
-zephyr_library_sources_ifdef(CONFIG_JERRY_PORT 
+set(JERRY_PORT_SOURCES
     ../jerry-port/common/jerry-port-context.c
     ../jerry-port/common/jerry-port-fs.c
     ../jerry-port/common/jerry-port-io.c
     ../jerry-port/common/jerry-port-process.c
-
     ../jerry-port/zephyr/jerry-port.c
     ../jerry-port/zephyr/getline-zephyr.c
     ../jerry-port/zephyr/getline-zephyr.c
 )
 
-# Jerry Math
-if(NOT CONFIG_JERRY_MATH)
-    message(STATUS "Jerry Math Disabled")
-    else()
-    message(STATUS "Jerry Math Enabled")
-endif()
+set(JERRY_MATH_INCLUDES,
+    ../jerry-math
+    ../jerry-math/include
+)
 
-# MUST FIX THE MAX .h INCLUDE
-zephyr_include_directories(../jerry-math ../jerry-math/include)
-
-zephyr_library_sources_ifdef(CONFIG_JERRY_MATH
+set(JERRY_MATH_SOURCES
     ../jerry-math/acos.c
     ../jerry-math/acosh.c
     ../jerry-math/asin.c
@@ -490,12 +393,12 @@ zephyr_library_sources_ifdef(CONFIG_JERRY_MATH
 )
 
 # Jerry Ext
-zephyr_include_directories(
+set(JERRY_EXT_INCLUDES
     ../jerry-ext/include
     ../jerry-ext/common
 )
 
-zephyr_library_sources(
+set(JERRY_EXT_SOURCES
     ../jerry-ext/arg/arg-js-iterator-helper.c
     ../jerry-ext/arg/arg-transform-functions.c
     ../jerry-ext/arg/arg.c
@@ -515,6 +418,37 @@ zephyr_library_sources(
     ../jerry-ext/util/sources.c
     ../jerry-ext/util/test262.c
 )
+
+zephyr_compile_definitions(${DEFINES_JERRY})
+
+message(STATUS "DEFINES_JERRY: ${DEFINES_JERRY}")
+
+#Core
+zephyr_library_include_directories(${JERRY_CORE_PRIVATE_INCLUDES})
+zephyr_include_directories(${JERRY_CORE_INTERFACE_INCLUDES})
+zephyr_library_sources(${JERRY_CORE_SOURCES})
+
+#Port
+zephyr_library_sources(${JERRY_PORT_SOURCES})
+
+#Ext
+zephyr_library_include_directories(${JERRY_EXT_INCLUDES})
+zephyr_include_directories(${JERRY_EXT_INCLUDES})
+zephyr_library_sources(${JERRY_EXT_SOURCES})
+
+#if(CONFIG_JERRY_BUILTINS)
+zephyr_library_sources(${JERRY_ECMA_BUILTINS_SOURCES})
+#endif()
+
+if(CONFIG_JERRY_MATH)
+    zephyr_library_sources(${JERRY_MATH_SOURCES})
+    zephyr_include_directories(${JERRY_MATH_INCLUDES})
+endif()
+
+#if(CONFIG_JERRY_EXT)
+#    zephyr_library_sources(${JERRY_EXT_SOURCES})
+#    zephyr_include_directories(${JERRY_EXT_INCLUDES})
+#endif()
 
 zephyr_library_link_libraries(JERRYSCRIPT)
 target_link_libraries(JERRYSCRIPT INTERFACE zephyr_interface)
