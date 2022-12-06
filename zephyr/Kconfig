@@ -5,84 +5,136 @@ config JERRYSCRIPT
 
 if JERRYSCRIPT
 
-	config JERRY_CMDLINE_TEST
-		bool "JERRY_CMDLINE_TEST - Build jerry test command line tool?"
-		default n
+	menu "Memory management"
+		config JERRY_GLOBAL_HEAP_SIZE
+			int "Heap Size"
+			default 64
+			help
+				"Size of memory heap, in kilobytes"
+		config JERRY_GC_LIMIT
+			int "Garbage Collector Limit"
+			default 0
+			help
+				"Heap usage limit to trigger garbage collection, If value is 0, the default is 1/32 of JERRY_HEAP_SIZE"
+		config JERRY_STACK_LIMIT
+			int "Stack Size"
+			default 0
+			help
+				"Maximum stack usage size, in kilobytes"
+		config JERRY_GC_MARK_LIMIT
+			int "Garbage Collector mark limit"
+			default 8
+			help
+				"Maximum depth of recursion during GC mark phase"
+		config JERRY_CPOINTER_32_BIT
+			bool "32 bit cpointers"
+			default y
+			help
+				"Enable 32 bits cpointers, mandatory if heap size > 512"
+	endmenu
 
-	config JERRY_CMDLINE
-		bool "JERRY_CMDLINE - Build jerry command line tool?"
-		default n
+	menu "Functionalities"
+		config JERRY_PARSER
+			bool "Enable JS parser"
+			default y
 
-	config JERRY_CMDLINE_SNAPSHOT
-		bool "JERRY_CMDLINE_SNAPSHOT - Build jerry snapshot command line tool?"
-		default n
+		config JERRY_SNAPSHOT_EXEC
+			bool "Enable snapshot execution"
+			default n
 
-	config JERRY_LIBFUZZER
-		bool "JERRY_LIBFUZZER - Build jerry with libfuzzer support?"
-		default n
+		config JERRY_SNAPSHOT_SAVE
+			bool "Enable snapshot save"
+			default n
+	endmenu
 
-	config JERRY_PORT
-		bool "JERRY_PORT - Build default jerry port implementation?"
+	menu "Submodules"
+		config JERRY_MATH
+			bool "Math"
+			default n
+
+		config JERRY_PORT
+			bool "Default Port Implementation"
+			default y
+			help
+				"Build default jerry port implementation"
+
+		config JERRY_EXT
+			bool "JERRY_EXT - Build jerry-ext?"
+			default y
+	endmenu
+
+	config JERRY_BUILTINS
+		bool "Enable Jerry Builtins"
 		default y
 
-	config JERRY_EXT
-		bool "JERRY_EXT - Build jerry-ext?"
+	config JERRY_BUILTIN_ANNEXB
+		depends on JERRY_BUILTINS
+		bool "Annex B fo ECMA5.1 Standard"
 		default y
-
-	config JERRY_MATH
-		bool "JERRY_MATH - Build and use jerry-math?"
-		default n
-
-	config JERRY_PARSER
-		bool "JERRY_PARSER - Use parser?"
+		help
+			"Enables or disables the Annex B of the ECMA5.1 standard."
+	
+	config JERRY_BUILTIN_ARRAY
+		depends on JERRY_BUILTINS
+		bool "Array"
 		default y
+		help
+			"Enables or disable the Array built-in."
 
-	config JERRY_GLOBAL_HEAP_SIZE
-		string "JERRY_GLOBAL_HEAP_SIZE - Size of memory heap, in kilobytes"
-		default "(70)"
-
-	config JERRY_SNAPSHOT_EXEC
-		bool "JERRY_SNAPSHOT_EXEC - Execute Jerry Snapshot?"
-		default n
-
-	config UNITTESTS
-		bool "UNITTESTS - Build unit tests?"
-		default n
-
-	config DOCTESTS
-		bool "DOCTESTS - Build doc tests?"
-		default n
-
-	config BUILD_SHARED_LIBS
-		bool "BUILD_SHARED_LIBS - Build shared libraries?"
-		default n
-
-	config ENABLE_AMALGAM
-		bool "ENABLE_AMALGAM - Enable amalgamated build?"
-		default n
-
-	config ENABLE_LTO
-		bool "ENABLE_LTO - Enable LTO build?"
-		default n
-
-	config ENABLE_STRIP
-		bool "ENABLE_STRIP - Enable stripping all symbols from release binary?"
+	config JERRY_BUILTIN_BOOLEAN
+		depends on JERRY_BUILTINS
+		bool "Boolean"
 		default y
+		help
+			"Enables or disables the Boolean built-in."
 
-	config ENABLE_COMPILE_COMMAND
-		bool "ENABLE_COMPILE_COMMAND - Enable generating compile_commands.json?"
+	config JERRY_BUILTIN_DATE
+		depends on JERRY_BUILTINS
+		bool "Date"
 		default y
+		help
+			"Enables or disables the Date built-in."
 
-	config JERRY_GC_LIMIT
-		string "JERRY_GC_LIMIT - Heap usage limit to trigger garbage collection"
-		default "(0)"
+	config JERRY_BUILTIN_ERRORS
+		depends on JERRY_BUILTINS
+		bool "Errors"
+		default y
+		help
+			"Enables or disables the built-in errors."
 
-	config JERRY_STACK_LIMIT
-		string "JERRY_STACK_LIMIT - Maximum stack usage size, in kilobytes"
-		default "(0)"
+	config JERRY_BUILTIN_JSON
+		depends on JERRY_BUILTINS
+		bool "JSON"
+		default y
+		help
+			"Enables or disables the JSON built-in."
 
-	config JERRY_GC_MARK_LIMIT
-		string "JERRY_GC_MARK_LIMIT - Maximum depth of recursion during GC mark phase"
-		default "(8)"
+  	config JERRY_BUILTIN_MATH
+		depends on JERRY_BUILTINS
+		bool "Math"
+		default y
+		help
+			"Enables or disables the Math built-in."
+
+	config JERRY_BUILTIN_NUMBER
+		depends on JERRY_BUILTINS
+		bool "Number"
+		default y
+		help
+			"Enables or disables the Number built-in."
+
+	config JERRY_BUILTIN_REGEXP
+		depends on JERRY_BUILTINS
+		bool "RegExp"
+		default y
+		help
+			"Enables or disables the REGEXP built-in."
+
+	config JERRY_BUILTIN_STRING
+		depends on JERRY_BUILTINS
+		bool "String"
+		default y
+		help
+			"Enables or disables the String built-in."
 
 endif
